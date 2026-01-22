@@ -514,6 +514,8 @@
     <script type="module">
         import { haptic, supportsHaptics } from "https://esm.sh/ios-haptics";
         window.haptic = haptic;
+        window.hapticConfirm = haptic.confirm;
+        window.hapticError = haptic.error;
     </script>
     
     <!-- Menu Screen -->
@@ -541,15 +543,15 @@
         </div>
 
         <div class="menu-buttons">
-            <button class="btn-large" id='startPractice' onclick="haptic.confirm();app.showGameScreen()">Start Practice</button>
-            <button class="btn-outline" onclick="app.showSettings()">Settings</button>
+            <button class="btn-large" id='startPractice' onclick="if(window.haptic) haptic();app.showGameScreen()">Start Practice</button>
+            <button class="btn-outline" onclick="if(window.haptic) haptic();app.showSettings()">Settings</button>
         </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen">
         <header>
-            <div style="font-weight: 900; font-size: 20px; cursor: pointer;" onclick="app.showMenu()">← Menu</div>
+            <div style="font-weight: 900; font-size: 20px; cursor: pointer;" onclick="if(window.haptic) haptic();app.showMenu()">← Menu</div>
             <div class="progress-container">
                 <div class="progress-bar-mastery" id="mastery-bar"></div>
                 <div class="progress-bar-session" id="session-bar"></div>
@@ -604,8 +606,8 @@
                 </div>
             </div>
             
-            <button class="btn-primary" onclick="app.startSession()">Continue Practice</button>
-            <button class="btn-secondary" onclick="app.showMenu()">Back to Menu</button>
+            <button class="btn-primary" onclick="if(window.haptic) haptic();app.startSession()">Continue Practice</button>
+            <button class="btn-secondary" onclick="if(window.haptic) haptic();app.showMenu()">Back to Menu</button>
         </div>
     </div>
 
@@ -627,8 +629,8 @@
             </div>
 
             <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" 
-                    onclick="app.resetData()">Reset All Progress</button>
-            <button class="btn-secondary" onclick="document.getElementById('settings-modal').style.display='none'">Close</button>
+                    onclick="if(window.haptic) haptic();app.resetData()">Reset All Progress</button>
+            <button class="btn-secondary" onclick="if(window.haptic) haptic();document.getElementById('settings-modal').style.display='none'">Close</button>
         </div>
     </div>
 
@@ -871,6 +873,7 @@ class App {
         }
 
         toggle.addEventListener('click', () => {
+            if (window.haptic) haptic();
             this.settings.hideEnglish = !this.settings.hideEnglish;
             toggle.classList.toggle('active', this.settings.hideEnglish);
             saveSettings(this.settings);
@@ -1093,7 +1096,7 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (window.haptic) haptic.confirm();
+            if (window.haptic){ haptic(); }
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1107,7 +1110,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
-            if (window.haptic) haptic.error();
+            if (window.haptic) haptic();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
