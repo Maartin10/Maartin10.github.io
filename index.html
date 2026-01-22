@@ -1006,6 +1006,7 @@ class App {
     }
 
     onDragStart(e) {
+        if (window.haptic) haptic();
         this.isDragging = true;
         this.isTap = true;
         this.startX = e.clientX;
@@ -1079,15 +1080,6 @@ class App {
         }
 
         if (action) {
-            // Trigger feedback as the VERY FIRST thing in the event handler
-            const isCorrect = action === this.currentConsonant.class;
-            if (isCorrect) {
-                 (window.hapticConfirm || window.haptic)?.();
-            } else {
-                 (window.hapticError || window.haptic)?.();
-            }
-            
-            // Delegate submission to ensure haptic is launched
             this.submitAnswer(action);
         } else {
             this.card.style.transform = 'translate(0,0)';
@@ -1101,12 +1093,11 @@ class App {
     }
 
     submitAnswer(userGuess) {
-        // UI and SRS updates are "heavy", we keep them separate 
-        // to let the haptic trigger in the initial event cycle
         const correctAnswer = this.currentConsonant.class;
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
+            if (window.haptic) haptic();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1120,6 +1111,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
+            if (window.haptic) haptic();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
