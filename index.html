@@ -514,8 +514,8 @@
     <script type="module">
         import { haptic, supportsHaptics } from "https://esm.sh/ios-haptics";
         window.haptic = haptic;
-        window.hapticConfirm = haptic.confirm;
-        window.hapticError = haptic.error;
+        window.hapticConfirm = haptic.confirm ? haptic.confirm.bind(haptic) : haptic;
+        window.hapticError = haptic.error ? haptic.error.bind(haptic) : haptic;
     </script>
     
     <!-- Menu Screen -->
@@ -768,7 +768,6 @@ class SRSManager {
     processResult(char, isCorrect) {
         const d = this.data[char];
         if (isCorrect) {
-            if (window.haptic) haptic();
             d.level = Math.min(d.level + 1, 5);
             d.correct = (d.correct || 0) + 1;
             const intervals = [0, 60000, 600000, 3600000, 18000000, 86400000];
@@ -1097,6 +1096,7 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
+            if (window.hapticConfirm) window.hapticConfirm();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1110,6 +1110,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
+            if (window.hapticError) window.hapticError();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
