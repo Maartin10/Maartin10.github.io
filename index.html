@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Thai Consonant Swipe</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     <style>
         :root {
             --bg-color: #131F24;
@@ -824,8 +823,12 @@ class App {
         this.sessionIndex = 0;
         this.sessionErrors = 0;
 
+        this.isDragging = false;
+        this.startX = 0;
+        this.startY = 0;
         this.currentX = 0;
         this.currentY = 0;
+        this.isTap = false;
 
         this.init();
     }
@@ -997,40 +1000,41 @@ class App {
     }
 
     attachEvents() {
-        this.hammertime = new Hammer(this.card);
-        this.hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
-        
-        this.hammertime.on('panstart', (e) => this.onPanStart(e));
-        this.hammertime.on('pan', (e) => this.onPanMove(e));
-        this.hammertime.on('panend', (e) => this.onPanEnd(e));
-        this.hammertime.on('tap', (e) => this.onTap(e));
+        this.card.addEventListener('pointerdown', (e) => this.onDragStart(e));
+        document.addEventListener('pointermove', (e) => this.onDragMove(e));
+        document.addEventListener('pointerup', (e) => this.onDragEnd(e));
     }
 
-    onPanStart(e) {
+    onDragStart(e) {
+        this.isDragging = true;
+        this.isTap = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
         this.card.classList.remove('animating');
+        this.card.setPointerCapture(e.pointerId);
     }
 
-    onPanMove(e) {
-        this.currentX = e.deltaX;
-        this.currentY = e.deltaY;
+    onDragMove(e) {
+        if (!this.isDragging) return;
 
-        // Dynamic rotation inspired by the user snippet
-        const xMulti = this.currentX * 0.03;
-        const yMulti = (e.center.y - (this.card.getBoundingClientRect().top + 210)) / 100;
-        const rotate = xMulti * (yMulti || 1);
-        
+        this.currentX = e.clientX - this.startX;
+        this.currentY = e.clientY - this.startY;
+
+        if (Math.abs(this.currentX) > 10 || Math.abs(this.currentY) > 10) {
+            this.isTap = false;
+        }
+
+        const rotate = this.currentX * 0.05;
         this.card.style.transform = `translate(${this.currentX}px, ${this.currentY}px) rotate(${rotate}deg)`;
 
         this.handleVisualFeedback();
     }
 
-    onTap(e) {
-        this.playAudio();
-    }
-
     handleVisualFeedback() {
-        const tY = 40; 
-        const tX = 40; 
+        if(this.isTap) return;
+
+        const tY = 50; 
+        const tX = 50; 
 
         this.resetOverlays();
 
@@ -1050,19 +1054,26 @@ class App {
         }
     }
 
-    onPanEnd(e) {
-        if (window.haptic) haptic();
+    onDragEnd(e) {
+        if (!this.isDragging) return;
+        this.isDragging = false;
         this.card.classList.add('animating');
 
-        const SWIPE_THRESHOLD = 80;
+        if (this.isTap) {
+            this.playAudio();
+            this.card.style.transform = 'translate(0,0)';
+            return;
+        }
+
+        const SWIPE_THRESHOLD = 100;
         let action = null;
 
-        const velocity = Math.max(Math.abs(e.velocityX), Math.abs(e.velocityY));
-
-        if (velocity > 0.5 || Math.abs(this.currentX) > SWIPE_THRESHOLD || Math.abs(this.currentY) > SWIPE_THRESHOLD) {
-            if (Math.abs(this.currentY) > Math.abs(this.currentX)) {
+        if (Math.abs(this.currentY) > Math.abs(this.currentX)) {
+            if (Math.abs(this.currentY) > SWIPE_THRESHOLD) {
                 action = this.currentY < 0 ? 'high' : 'low';
-            } else if (this.currentX > 0) {
+            }
+        } else {
+            if (this.currentX > SWIPE_THRESHOLD) {
                 action = 'mid';
             }
         }
@@ -1085,7 +1096,7 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (window.haptic) haptic();
+            if (window.haptic){ haptic(); }
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
