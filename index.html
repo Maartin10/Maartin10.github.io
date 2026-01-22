@@ -511,48 +511,9 @@
     </style>
 </head>
 <body>
-    <script>
-        (function() {
-            function _trigger() {
-                try {
-                    if (navigator.vibrate) {
-                        navigator.vibrate(50);
-                        return;
-                    }
-                    // The "switch" hack for iOS Safari
-                    const label = document.createElement("label");
-                    const input = document.createElement("input");
-                    input.type = "checkbox";
-                    input.setAttribute("switch", "");
-                    label.style.display = "none";
-                    label.appendChild(input);
-                    document.head.appendChild(label);
-                    label.click();
-                    document.head.removeChild(label);
-                } catch (e) {}
-            }
-
-            window.haptic = _trigger;
-            
-            window.haptic.confirm = function() {
-                if (navigator.vibrate) {
-                    navigator.vibrate([50, 70, 50]);
-                } else {
-                    _trigger();
-                    setTimeout(_trigger, 120);
-                }
-            };
-
-            window.haptic.error = function() {
-                if (navigator.vibrate) {
-                    navigator.vibrate([50, 70, 50, 70, 50]);
-                } else {
-                    _trigger();
-                    setTimeout(_trigger, 120);
-                    setTimeout(_trigger, 240);
-                }
-            };
-        })();
+    <script type="module">
+        import { haptic, supportsHaptics } from "https://esm.sh/ios-haptics";
+        window.haptic = haptic;
     </script>
     
     <!-- Menu Screen -->
@@ -1128,14 +1089,11 @@ class App {
     }
 
     submitAnswer(userGuess) {
-        const isCorrect = userGuess === this.currentConsonant.class;
-
-        if (window.haptic) {
-            if (isCorrect) haptic.confirm();
-            else haptic.error();
-        }
+        const correctAnswer = this.currentConsonant.class;
+        const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
+            if (window.haptic) haptic.confirm();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1149,6 +1107,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
+            if (window.haptic) haptic.error();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
