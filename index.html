@@ -824,7 +824,6 @@ class App {
         this.sessionIndex = 0;
         this.sessionErrors = 0;
 
-        this.mc = null;
         this.currentX = 0;
         this.currentY = 0;
 
@@ -998,17 +997,13 @@ class App {
     }
 
     attachEvents() {
-        this.mc = new Hammer.Manager(this.card, {
-            touchAction: 'none'
-        });
-
-        this.mc.add(new Hammer.Pan({ threshold: 0, pointers: 0 }));
-        this.mc.add(new Hammer.Tap());
-
-        this.mc.on('panstart', (e) => this.onPanStart(e));
-        this.mc.on('panmove', (e) => this.onPanMove(e));
-        this.mc.on('panend', (e) => this.onPanEnd(e));
-        this.mc.on('tap', (e) => this.onTap(e));
+        this.hammertime = new Hammer(this.card);
+        this.hammertime.get('pan').set({ direction: Hammer.DIRECTION_ALL, threshold: 10 });
+        
+        this.hammertime.on('panstart', (e) => this.onPanStart(e));
+        this.hammertime.on('pan', (e) => this.onPanMove(e));
+        this.hammertime.on('panend', (e) => this.onPanEnd(e));
+        this.hammertime.on('tap', (e) => this.onTap(e));
     }
 
     onPanStart(e) {
@@ -1019,7 +1014,11 @@ class App {
         this.currentX = e.deltaX;
         this.currentY = e.deltaY;
 
-        const rotate = this.currentX * 0.05;
+        // Dynamic rotation inspired by the user snippet
+        const xMulti = this.currentX * 0.03;
+        const yMulti = (e.center.y - (this.card.getBoundingClientRect().top + 210)) / 100;
+        const rotate = xMulti * (yMulti || 1);
+        
         this.card.style.transform = `translate(${this.currentX}px, ${this.currentY}px) rotate(${rotate}deg)`;
 
         this.handleVisualFeedback();
@@ -1030,8 +1029,8 @@ class App {
     }
 
     handleVisualFeedback() {
-        const tY = 50; 
-        const tX = 50; 
+        const tY = 40; 
+        const tX = 40; 
 
         this.resetOverlays();
 
@@ -1055,15 +1054,15 @@ class App {
         if (window.haptic) haptic();
         this.card.classList.add('animating');
 
-        const SWIPE_THRESHOLD = 100;
+        const SWIPE_THRESHOLD = 80;
         let action = null;
 
-        if (Math.abs(this.currentY) > Math.abs(this.currentX)) {
-            if (Math.abs(this.currentY) > SWIPE_THRESHOLD) {
+        const velocity = Math.max(Math.abs(e.velocityX), Math.abs(e.velocityY));
+
+        if (velocity > 0.5 || Math.abs(this.currentX) > SWIPE_THRESHOLD || Math.abs(this.currentY) > SWIPE_THRESHOLD) {
+            if (Math.abs(this.currentY) > Math.abs(this.currentX)) {
                 action = this.currentY < 0 ? 'high' : 'low';
-            }
-        } else {
-            if (this.currentX > SWIPE_THRESHOLD) {
+            } else if (this.currentX > 0) {
                 action = 'mid';
             }
         }
