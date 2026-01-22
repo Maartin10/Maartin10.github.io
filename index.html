@@ -817,6 +817,7 @@ class App {
         this.settings = loadSettings();
         this.card = document.getElementById('active-card');
         this.overlays = document.querySelectorAll('.overlay');
+        this.haptic = window.haptic;
         
         this.sessionQueue = [];
         this.sessionSize = 10;
@@ -1096,12 +1097,7 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (window.haptic){
-                haptic();
-                alert("Correct answer");
-            } else {
-                alert("No haptic feedback available");
-            }
+            if (this.haptic) this.haptic();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1115,12 +1111,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
-            if (window.haptic){
-                haptic();
-                alert("Wrong answer");
-            } else {
-                alert("No haptic feedback available");
-            }
+            if (this.haptic) this.haptic();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
