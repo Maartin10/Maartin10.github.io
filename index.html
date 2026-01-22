@@ -1079,6 +1079,15 @@ class App {
         }
 
         if (action) {
+            // Trigger feedback as the VERY FIRST thing in the event handler
+            const isCorrect = action === this.currentConsonant.class;
+            if (isCorrect) {
+                 (window.hapticConfirm || window.haptic)?.();
+            } else {
+                 (window.hapticError || window.haptic)?.();
+            }
+            
+            // Delegate submission to ensure haptic is launched
             this.submitAnswer(action);
         } else {
             this.card.style.transform = 'translate(0,0)';
@@ -1092,52 +1101,39 @@ class App {
     }
 
     submitAnswer(userGuess) {
+        // UI and SRS updates are "heavy", we keep them separate 
+        // to let the haptic trigger in the initial event cycle
         const correctAnswer = this.currentConsonant.class;
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            // Trigger haptic feedback first
-            if (window.hapticConfirm) window.hapticConfirm();
-            else if (window.haptic) window.haptic();
+            const endX = userGuess === 'mid' ? 500 : 0;
+            const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
+            
+            this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
+            this.card.style.opacity = '0';
 
-            // Srs and state index update can happen immediately
             this.srs.processResult(this.currentConsonant.char, true);
             this.sessionIndex++;
-
-            // Tiny delay before heavy card animation to ensure haptic triggers reliably
+            
             setTimeout(() => {
-                const endX = userGuess === 'mid' ? 500 : 0;
-                const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
-                
-                this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
-                this.card.style.opacity = '0';
-
-                setTimeout(() => {
-                    this.loadCard();
-                }, 300);
-            }, 10);
+                this.loadCard();
+            }, 300);
         } else {
-            // Trigger error haptic feedback
-            if (window.hapticError) window.hapticError();
-            else if (window.haptic) window.haptic();
-
+            this.card.style.transform = 'translate(0,0)';
+            this.card.classList.add('shake', 'error');
+            document.body.classList.add('screen-error');
+            this.card.style.borderColor = 'transparent';
+            
             this.sessionErrors++;
             this.srs.processResult(this.currentConsonant.char, false);
 
-            // Tiny delay before heavy card animation
             setTimeout(() => {
-                this.card.style.transform = 'translate(0,0)';
-                this.card.classList.add('shake', 'error');
-                document.body.classList.add('screen-error');
+                this.card.classList.remove('shake', 'error');
+                document.body.classList.remove('screen-error');
                 this.card.style.borderColor = 'transparent';
-                
-                setTimeout(() => {
-                    this.card.classList.remove('shake', 'error');
-                    document.body.classList.remove('screen-error');
-                    this.card.style.borderColor = 'transparent';
-                    this.resetOverlays();
-                }, 600);
-            }, 10);
+                this.resetOverlays();
+            }, 600);
         }
     }
 
