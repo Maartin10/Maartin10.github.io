@@ -514,6 +514,8 @@
     <script type="module">
         import { haptic, supportsHaptics } from "https://esm.sh/ios-haptics";
         window.haptic = haptic;
+        window.hapticConfirm = haptic.confirm;
+        window.hapticError = haptic.error;
     </script>
     
     <!-- Menu Screen -->
@@ -1094,7 +1096,7 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (window.haptic) haptic.confirm();
+            if (window.hapticConfirm) hapticConfirm();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1108,7 +1110,7 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
-            if (window.haptic) haptic.error();
+            if (window.hapticError) hapticError();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
