@@ -211,13 +211,13 @@
         }
 
         .card-stack-behind:nth-child(1) {
-            transform: scale(0.95) translateY(8px);
+            transform: translateY(8px) translateX(4px);
             opacity: 0.7;
             z-index: 0;
         }
 
         .card-stack-behind:nth-child(2) {
-            transform: scale(0.9) translateY(16px);
+            transform: translateY(16px) translateX(8px);
             opacity: 0.4;
             z-index: -1;
         }
@@ -375,6 +375,74 @@
             font-size: 28px;
             font-weight: 900;
             margin: 0 0 15px 0;
+        }
+        /* --- Settings UI --- */
+        .setting-card {
+            background: #202F36;
+            border: 2px solid #37464F;
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s, border 0.2s;
+        }
+
+        .setting-card:hover {
+            background: #24363F;
+        }
+
+        .setting-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .setting-icon {
+            font-size: 26px;
+        }
+
+        .setting-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .setting-subtitle {
+            font-size: 12px;
+            color: var(--sub-text);
+            margin-top: 2px;
+        }
+
+        /* --- Toggle Switch --- */
+        .setting-switch {
+            width: 44px;
+            height: 26px;
+            background: #37464F;
+            border-radius: 20px;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .switch-knob {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+
+        /* ON state */
+        .setting-card.active .setting-switch {
+            background: #58CC02;
+        }
+
+        .setting-card.active .switch-knob {
+            transform: translateX(18px);
         }
 
         .stats-row {
@@ -537,13 +605,28 @@
         </div>
     </div>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <h2>Settings</h2>
-            <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" onclick="app.resetData()">Reset All Progress</button>
-            <button class="btn-secondary" onclick="document.getElementById('settings-modal').style.display='none'">Close</button>
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <h2>Settings</h2>
+        
+        <div class="setting-card" id="hide-english-toggle">
+            <div class="setting-left">
+                <div class="setting-icon">🇹🇭</div>
+                <div class="setting-text">
+                    <div class="setting-title">Thai Only Mode</div>
+                    <div class="setting-subtitle">Hide phonetic & meaning</div>
+                </div>
+            </div>
+            <div class="setting-switch">
+                <div class="switch-knob"></div>
+            </div>
         </div>
+
+        <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" 
+                onclick="app.resetData()">Reset All Progress</button>
+        <button class="btn-secondary" onclick="document.getElementById('settings-modal').style.display='none'">Close</button>
     </div>
+</div>
 
 <script>
 
@@ -594,6 +677,17 @@ const CONSONANTS = [
     { id: 43, char: "อ", name: "Or Ang", meaning: "Basin", class: "mid" },
     { id: 44, char: "ฮ", name: "Hor Nok-huk", meaning: "Owl", class: "low" }
 ];
+
+const SETTINGS_KEY = 'thai_sorter_settings';
+
+function loadSettings() {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    return stored ? JSON.parse(stored) : { hideEnglish: false };
+}
+
+function saveSettings(settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
 /* --- SRS & SESSION LOGIC --- */
 class SRSManager {
@@ -714,6 +808,7 @@ class SRSManager {
 class App {
     constructor() {
         this.srs = new SRSManager();
+        this.settings = loadSettings();
         this.card = document.getElementById('active-card');
         this.overlays = document.querySelectorAll('.overlay');
         
@@ -735,10 +830,12 @@ class App {
     init() {
         this.attachEvents();
         this.updateMenuStats();
+        this.initSettingsUI();
     }
 
     showMenu() {
         document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('summary-modal').style.display = 'none';
         document.getElementById('menu-screen').style.display = 'flex';
         this.updateMenuStats();
     }
@@ -747,6 +844,34 @@ class App {
         document.getElementById('menu-screen').style.display = 'none';
         document.getElementById('game-screen').style.display = 'flex';
         this.startSession();
+    }
+
+    applyCardVisibility() {
+        const phonetic = document.getElementById('name-display');
+        const meaning = document.getElementById('meaning-display');
+
+        if (this.settings.hideEnglish) {
+            phonetic.style.display = 'none';
+            meaning.style.display = 'none';
+        } else {
+            phonetic.style.display = '';
+            meaning.style.display = '';
+        }
+    }
+    
+    initSettingsUI() {
+        const toggle = document.getElementById('hide-english-toggle');
+
+        if (this.settings.hideEnglish) {
+            toggle.classList.add('active');
+        }
+
+        toggle.addEventListener('click', () => {
+            this.settings.hideEnglish = !this.settings.hideEnglish;
+            toggle.classList.toggle('active', this.settings.hideEnglish);
+            saveSettings(this.settings);
+            this.applyCardVisibility();
+        });
     }
 
     updateMenuStats() {
@@ -791,6 +916,7 @@ class App {
         document.getElementById('char-display').innerText = this.currentConsonant.char;
         document.getElementById('name-display').innerText = this.currentConsonant.name;
         document.getElementById('meaning-display').innerText = this.currentConsonant.meaning;
+        this.applyCardVisibility();
     }
 
     updateCardStack() {
