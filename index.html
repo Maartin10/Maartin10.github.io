@@ -32,6 +32,7 @@
             overflow: hidden;
             color: white;
             transition: background-color 0.5s ease-in-out;
+            touch-action: manipulation;
         }
 
         body.screen-error {
@@ -512,10 +513,8 @@
 </head>
 <body>
     <script type="module">
-        import { haptic, supportsHaptics } from "https://esm.sh/ios-haptics";
+        import { haptic } from "https://esm.sh/ios-haptics";
         window.haptic = haptic;
-        window.hapticConfirm = haptic.confirm ? haptic.confirm.bind(haptic) : haptic;
-        window.hapticError = haptic.error ? haptic.error.bind(haptic) : haptic;
     </script>
     
     <!-- Menu Screen -->
@@ -829,6 +828,7 @@ class App {
         this.currentX = 0;
         this.currentY = 0;
         this.isTap = false;
+        this.lastThreshold = null;
 
         this.init();
     }
@@ -1006,10 +1006,12 @@ class App {
     }
 
     onDragStart(e) {
+        if (window.haptic) haptic();
         this.isDragging = true;
         this.isTap = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
+        this.lastThreshold = null;
         this.card.classList.remove('animating');
         this.card.setPointerCapture(e.pointerId);
     }
@@ -1038,24 +1040,34 @@ class App {
 
         this.resetOverlays();
 
+        let threshold = null;
         if (Math.abs(this.currentY) > Math.abs(this.currentX) && Math.abs(this.currentY) > tY) {
             if (this.currentY < 0) {
                 this.overlays[0].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
                 this.card.style.borderColor = "var(--color-high)";
+                threshold = 'high';
             } else {
                 this.overlays[1].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
                 this.card.style.borderColor = "var(--color-low)";
+                threshold = 'low';
             }
         } else if (this.currentX > tX) {
             this.overlays[2].style.opacity = Math.min(Math.abs(this.currentX)/150, 1);
             this.card.style.borderColor = "var(--color-mid)";
+            threshold = 'mid';
         } else {
              this.card.style.borderColor = "transparent";
+        }
+
+        if (threshold !== this.lastThreshold) {
+            if (threshold && window.haptic) haptic();
+            this.lastThreshold = threshold;
         }
     }
 
     onDragEnd(e) {
         if (!this.isDragging) return;
+        this.card.releasePointerCapture(e.pointerId);
         this.isDragging = false;
         this.card.classList.add('animating');
 
@@ -1092,11 +1104,17 @@ class App {
     }
 
     submitAnswer(userGuess) {
-        const correctAnswer = this.currentConsonant.class;
-        const isCorrect = userGuess === correctAnswer;
+        const isCorrect = userGuess === this.currentConsonant.class;
+
+        // Trigger haptic with a tiny delay to escape the pointer-event loop
+        setTimeout(() => {
+            if (window.haptic) {
+                if (isCorrect) (haptic.confirm || haptic)();
+                else (haptic.error || haptic)();
+            }
+        }, 10);
 
         if (isCorrect) {
-            if (window.hapticConfirm) window.hapticConfirm();
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1110,7 +1128,6 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
-            if (window.hapticError) window.hapticError();
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
