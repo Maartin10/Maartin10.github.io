@@ -1002,11 +1002,10 @@ class App {
     attachEvents() {
         this.card.addEventListener('pointerdown', (e) => this.onDragStart(e));
         document.addEventListener('pointermove', (e) => this.onDragMove(e));
-        document.addEventListener('pointerup', (e) => this.onDragEnd(e));
+        document.addEventListener('pointerup', (e) => { if (window.haptic) haptic(); this.onDragEnd(e); });
     }
 
     onDragStart(e) {
-        if (window.haptic) haptic();
         this.isDragging = true;
         this.isTap = true;
         this.startX = e.clientX;
