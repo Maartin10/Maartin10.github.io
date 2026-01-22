@@ -1098,6 +1098,7 @@ class App {
         if (isCorrect) {
             if (window.haptic){
                 haptic();
+                alert("Correct answer");
             } else {
                 alert("No haptic feedback available");
             }
@@ -1116,6 +1117,7 @@ class App {
         } else {
             if (window.haptic){
                 haptic();
+                alert("Wrong answer");
             } else {
                 alert("No haptic feedback available");
             }
