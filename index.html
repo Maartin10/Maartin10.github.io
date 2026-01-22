@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thai Consonant Swipe</title>
+    <style>
+        :root {
+            --bg-color: #131F24;
+            --card-bg: #FFFFFF;
+            --text-color: #3C3C3C;
+            --sub-text: #AFAFAF;
+            
+            /* Class Colors */
+            --color-high: #FF4B4B; /* Red - Up */
+            --color-mid: #FFC800;  /* Yellow - Right */
+            --color-low: #58CC02;  /* Green - Down */
+            
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: white;
+            transition: background-color 0.5s ease-in-out;
+        }
+
+        body.screen-error {
+            background-color: #4A1313;
+        }
+
+        /* --- Menu Screen --- */
+        #menu-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        #game-screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .menu-logo {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .menu-subtitle {
+            color: var(--sub-text);
+            font-size: 14px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 350px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #202F36;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            border-bottom: 3px solid rgba(0,0,0,0.2);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 900;
+            color: #FFC800;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--sub-text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .btn-large {
+            background: #58CC02;
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #46a302;
+            width: 100%;
+            transition: transform 0.1s;
+        }
+        .btn-large:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--sub-text);
+            border: 2px solid #37464F;
+            padding: 12px 30px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* --- Header --- */
+        header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            margin: 0 15px;
+            background: #37464F;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Global mastery (blue) */
+        .progress-bar-mastery {
+            position: absolute;
+            height: 100%;
+            background: #1CB0F6;
+            width: 0%;
+            opacity: 0.3;
+        }
+
+        /* Session progress (green) */
+        .progress-bar-session {
+            position: absolute;
+            height: 100%;
+            background: #58CC02;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats-badge {
+            font-weight: bold;
+            color: #FFC800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+
+        /* --- Game Area --- */
+        #game-area {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .card-container {
+            position: relative;
+            width: 300px;
+            height: 420px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Stack effect - cards behind the active one */
+        .card-stack-behind {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+
+        .card-stack-behind:nth-child(1) {
+            transform: scale(0.95) translateY(8px);
+            opacity: 0.7;
+            z-index: 0;
+        }
+
+        .card-stack-behind:nth-child(2) {
+            transform: scale(0.9) translateY(16px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: grab;
+            transition: transform 0.1s linear;
+            border: 4px solid transparent;
+            z-index: 2;
+        }
+
+        .card.error {
+            background: #FF4B4B;
+        }
+
+        .card.error .thai-char,
+        .card.error .phonetic,
+        .card.error .meaning {
+            color: white;
+        }
+
+        .card.animating {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .thai-char {
+            font-size: 120px;
+            font-weight: bold;
+            color: var(--text-color);
+            line-height: 1.2;
+            pointer-events: none;
+        }
+
+        .phonetic {
+            font-size: 24px;
+            color: #777;
+            margin-top: 10px;
+            pointer-events: none;
+        }
+
+        .meaning {
+            font-size: 16px;
+            color: #999;
+            margin-top: 5px;
+            pointer-events: none;
+        }
+
+        .audio-icon {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #1CB0F6;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 900;
+            color: white;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 3;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding-bottom: 20px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .legend-item {
+            padding: 8px;
+            border-radius: 12px;
+            background: #202F36;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            border-bottom: 3px solid rgba(0,0,0,0.2);
+        }
+
+        .l-high { color: var(--color-high); border: 2px solid var(--color-high); }
+        .l-mid { color: var(--color-mid); border: 2px solid var(--color-mid); }
+        .l-low { color: var(--color-low); border: 2px solid var(--color-low); }
+
+        .hint-text {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--sub-text);
+        }
+
+        /* --- Modals --- */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(19, 31, 36, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
+
+        .modal-content {
+            background: #202F36;
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 340px;
+            width: 90%;
+            border: 2px solid #37464F;
+        }
+
+        .result-icon {
+            font-size: 64px;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 900;
+            margin: 0 0 15px 0;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 25px 0;
+            padding: 20px 0;
+            border-top: 1px solid #37464F;
+            border-bottom: 1px solid #37464F;
+        }
+
+        .stat-mini {
+            text-align: center;
+        }
+
+        .stat-mini-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #FFC800;
+        }
+
+        .stat-mini-label {
+            font-size: 11px;
+            color: var(--sub-text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+
+        .btn-primary {
+            margin-top: 20px;
+            background: #58CC02;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #46a302;
+            width: 100%;
+        }
+        .btn-primary:active { transform: translateY(4px); box-shadow: none; }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #1CB0F6;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            50% { transform: translateX(10px) rotate(5deg); }
+            75% { transform: translateX(-10px) rotate(-5deg); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Menu Screen -->
+    <div id="menu-screen">
+        <div class="menu-logo">Thai<span style="color:#58CC02">Sorter</span></div>
+        <div class="menu-subtitle">Master Thai Consonant Classes</div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="menu-mastery">0%</div>
+                <div class="stat-label">Mastery</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="menu-learned">0</div>
+                <div class="stat-label">Learned</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="menu-accuracy">-</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="menu-streak">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="btn-large" onclick="app.showGameScreen()">Start Practice</button>
+            <button class="btn-outline" onclick="app.showSettings()">Settings</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen">
+        <header>
+            <div style="font-weight: 900; font-size: 20px; cursor: pointer;" onclick="app.showMenu()">← Menu</div>
+            <div class="progress-container">
+                <div class="progress-bar-mastery" id="mastery-bar"></div>
+                <div class="progress-bar-session" id="session-bar"></div>
+            </div>
+            <div class="stats-badge">
+                <span>★</span> <span id="mastery-score">0</span>
+            </div>
+        </header>
+
+        <div id="game-area">
+            <div class="card-container" id="card-stack">
+                <!-- Stack effect cards will be dynamically added here -->
+                <div class="card" id="active-card">
+                    <div class="overlay" style="background: rgba(255, 75, 75, 0.8);">HIGH</div>
+                    <div class="overlay" style="background: rgba(88, 204, 2, 0.8);">LOW</div>
+                    <div class="overlay" style="background: rgba(255, 200, 0, 0.8);">MID</div>
+                    
+                    <div class="thai-char" id="char-display">?</div>
+                    <div class="phonetic" id="name-display">...</div>
+                    <div class="meaning" id="meaning-display">...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="legend-grid">
+                <div class="legend-item l-high">HIGH<br>⬆ UP</div>
+                <div class="legend-item l-mid">MID<br>➡ RIGHT</div>
+                <div class="legend-item l-low">LOW<br>⬇ DOWN</div>
+            </div>
+            <div class="hint-text">Swipe to sort • Tap to listen</div>
+        </div>
+    </div>
+
+    <div id="summary-modal" class="modal">
+        <div class="modal-content">
+            <div class="result-icon" id="result-icon">🎉</div>
+            <h2 class="modal-title" id="result-title">Amazing!</h2>
+            
+            <div class="stats-row">
+                <div class="stat-mini">
+                    <div class="stat-mini-value" id="modal-correct">0</div>
+                    <div class="stat-mini-label">Correct</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-value" id="modal-errors">0</div>
+                    <div class="stat-mini-label">Errors</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="stat-mini-value" id="modal-accuracy">0%</div>
+                    <div class="stat-mini-label">Accuracy</div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="app.startSession()">Continue Practice</button>
+            <button class="btn-secondary" onclick="app.showMenu()">Back to Menu</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" onclick="app.resetData()">Reset All Progress</button>
+            <button class="btn-secondary" onclick="document.getElementById('settings-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
+<script>
+
+/* --- DATA --- */
+const CONSONANTS = [
+    { id: 1, char: "ก", name: "Gor Gai", meaning: "Chicken", class: "mid" },
+    { id: 2, char: "ข", name: "Kor Kai", meaning: "Egg", class: "high" },
+    { id: 3, char: "ฃ", name: "Kor Khuad", meaning: "Bottle (Obsolete)", class: "high" },
+    { id: 4, char: "ค", name: "Kor Kwai", meaning: "Buffalo", class: "low" },
+    { id: 5, char: "ฅ", name: "Kor Kon", meaning: "Person (Obsolete)", class: "low" },
+    { id: 6, char: "ฆ", name: "Kor Ra-Kang", meaning: "Bell", class: "low" },
+    { id: 7, char: "ง", name: "Ngor Ngu", meaning: "Snake", class: "low" },
+    { id: 8, char: "จ", name: "Jor Jan", meaning: "Plate", class: "mid" },
+    { id: 9, char: "ฉ", name: "Chor Ching", meaning: "Cymbals", class: "high" },
+    { id: 10, char: "ช", name: "Chor Chang", meaning: "Elephant", class: "low" },
+    { id: 11, char: "ซ", name: "Sor So", meaning: "Chain", class: "low" },
+    { id: 12, char: "ฌ", name: "Chor Cher", meaning: "Tree", class: "low" },
+    { id: 13, char: "ญ", name: "Yor Ying", meaning: "Woman", class: "low" },
+    { id: 14, char: "ฎ", name: "Dor Cha-da", meaning: "Headdress", class: "mid" },
+    { id: 15, char: "ฏ", name: "Tor Pa-tak", meaning: "Goad", class: "mid" },
+    { id: 16, char: "ฐ", name: "Thor Than", meaning: "Base", class: "high" },
+    { id: 17, char: "ฑ", name: "Thor Montho", meaning: "Giantess", class: "low" },
+    { id: 18, char: "ฒ", name: "Thor Phu-tao", meaning: "Elder", class: "low" },
+    { id: 19, char: "ณ", name: "Nor Nen", meaning: "Novice Monk", class: "low" },
+    { id: 20, char: "ด", name: "Dor Dek", meaning: "Child", class: "mid" },
+    { id: 21, char: "ต", name: "Tor Tao", meaning: "Turtle", class: "mid" },
+    { id: 22, char: "ถ", name: "Thor Thung", meaning: "Sack", class: "high" },
+    { id: 23, char: "ท", name: "Thor Thahan", meaning: "Soldier", class: "low" },
+    { id: 24, char: "ธ", name: "Thor Thong", meaning: "Flag", class: "low" },
+    { id: 25, char: "น", name: "Nor Nu", meaning: "Mouse", class: "low" },
+    { id: 26, char: "บ", name: "Bor Bai-mai", meaning: "Leaf", class: "mid" },
+    { id: 27, char: "ป", name: "Por Pla", meaning: "Fish", class: "mid" },
+    { id: 28, char: "ผ", name: "Phor Phueng", meaning: "Bee", class: "high" },
+    { id: 29, char: "ฝ", name: "For Fa", meaning: "Lid", class: "high" },
+    { id: 30, char: "พ", name: "Phor Phan", meaning: "Tray", class: "low" },
+    { id: 31, char: "ฟ", name: "For Fan", meaning: "Teeth", class: "low" },
+    { id: 32, char: "ภ", name: "Phor Sam-phao", meaning: "Sailboat", class: "low" },
+    { id: 33, char: "ม", name: "Mor Ma", meaning: "Horse", class: "low" },
+    { id: 34, char: "ย", name: "Yor Yak", meaning: "Giant", class: "low" },
+    { id: 35, char: "ร", name: "Ror Rua", meaning: "Boat", class: "low" },
+    { id: 36, char: "ล", name: "Lor Ling", meaning: "Monkey", class: "low" },
+    { id: 37, char: "ว", name: "Wor Waen", meaning: "Ring", class: "low" },
+    { id: 38, char: "ศ", name: "Sor Sala", meaning: "Pavilion", class: "high" },
+    { id: 39, char: "ษ", name: "Sor Ruesi", meaning: "Hermit", class: "high" },
+    { id: 40, char: "ส", name: "Sor Suea", meaning: "Tiger", class: "high" },
+    { id: 41, char: "ห", name: "Hor Hip", meaning: "Chest", class: "high" },
+    { id: 42, char: "ฬ", name: "Lor Chu-la", meaning: "Kite", class: "low" },
+    { id: 43, char: "อ", name: "Or Ang", meaning: "Basin", class: "mid" },
+    { id: 44, char: "ฮ", name: "Hor Nok-huk", meaning: "Owl", class: "low" }
+];
+
+/* --- SRS & SESSION LOGIC --- */
+class SRSManager {
+    constructor() {
+        this.storageKey = 'thai_sorter_v2';
+        this.statsKey = 'thai_sorter_stats';
+        this.data = this.loadData();
+        this.stats = this.loadStats();
+    }
+
+    loadData() {
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) return JSON.parse(stored);
+        
+        const initialData = {};
+        CONSONANTS.forEach(c => {
+            initialData[c.char] = { level: 0, nextReview: 0, errors: 0, correct: 0 };
+        });
+        return initialData;
+    }
+
+    loadStats() {
+        const stored = localStorage.getItem(this.statsKey);
+        if (stored) return JSON.parse(stored);
+        return { totalSessions: 0, totalCorrect: 0, totalErrors: 0, currentStreak: 0 };
+    }
+
+    saveData() {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+        localStorage.setItem(this.statsKey, JSON.stringify(this.stats));
+    }
+
+    reset() {
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.statsKey);
+        this.data = this.loadData();
+        this.stats = this.loadStats();
+    }
+
+    getSessionBatch(count) {
+        const now = Date.now();
+        
+        let dueItems = CONSONANTS.filter(c => {
+            const d = this.data[c.char];
+            return d.level > 0 && d.nextReview <= now;
+        });
+
+        let newItems = CONSONANTS.filter(c => this.data[c.char].level === 0);
+
+        let batch = [];
+
+        while (batch.length < count && dueItems.length > 0) {
+            const index = Math.floor(Math.random() * dueItems.length);
+            batch.push(dueItems[index]);
+            dueItems.splice(index, 1);
+        }
+
+        while (batch.length < count && newItems.length > 0) {
+            const index = Math.floor(Math.random() * newItems.length);
+            batch.push(newItems[index]);
+            newItems.splice(index, 1);
+        }
+
+        while (batch.length < count) {
+            const randomItem = CONSONANTS[Math.floor(Math.random() * CONSONANTS.length)];
+            batch.push(randomItem);
+        }
+
+        return batch;
+    }
+
+    processResult(char, isCorrect) {
+        const d = this.data[char];
+        if (isCorrect) {
+            d.level = Math.min(d.level + 1, 5);
+            d.correct = (d.correct || 0) + 1;
+            const intervals = [0, 60000, 600000, 3600000, 18000000, 86400000];
+            d.nextReview = Date.now() + intervals[d.level];
+            this.stats.totalCorrect++;
+        } else {
+            d.level = Math.max(0, d.level - 1);
+            d.errors++;
+            d.nextReview = Date.now() + 30000;
+            this.stats.totalErrors++;
+        }
+        this.saveData();
+    }
+
+    finishSession(errors) {
+        this.stats.totalSessions++;
+        if (errors === 0) {
+            this.stats.currentStreak++;
+        } else {
+            this.stats.currentStreak = 0;
+        }
+        this.saveData();
+    }
+
+    getGlobalMastery() {
+        let totalLevels = CONSONANTS.length * 5;
+        let currentLevels = 0;
+        Object.values(this.data).forEach(d => currentLevels += d.level);
+        return Math.floor((currentLevels / totalLevels) * 100);
+    }
+
+    getLearnedCount() {
+        return Object.values(this.data).filter(d => d.level > 0).length;
+    }
+
+    getGlobalAccuracy() {
+        const total = this.stats.totalCorrect + this.stats.totalErrors;
+        if (total === 0) return null;
+        return Math.floor((this.stats.totalCorrect / total) * 100);
+    }
+}
+
+/* --- GAME CONTROLLER --- */
+class App {
+    constructor() {
+        this.srs = new SRSManager();
+        this.card = document.getElementById('active-card');
+        this.overlays = document.querySelectorAll('.overlay');
+        
+        this.sessionQueue = [];
+        this.sessionSize = 10;
+        this.sessionIndex = 0;
+        this.sessionErrors = 0;
+
+        this.isDragging = false;
+        this.startX = 0;
+        this.startY = 0;
+        this.currentX = 0;
+        this.currentY = 0;
+        this.isTap = false;
+
+        this.init();
+    }
+
+    init() {
+        this.attachEvents();
+        this.updateMenuStats();
+    }
+
+    showMenu() {
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+        this.updateMenuStats();
+    }
+
+    showGameScreen() {
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        this.startSession();
+    }
+
+    updateMenuStats() {
+        const mastery = this.srs.getGlobalMastery();
+        const learned = this.srs.getLearnedCount();
+        const accuracy = this.srs.getGlobalAccuracy();
+        const streak = this.srs.stats.currentStreak;
+
+        document.getElementById('menu-mastery').textContent = mastery + '%';
+        document.getElementById('menu-learned').textContent = learned;
+        document.getElementById('menu-accuracy').textContent = accuracy !== null ? accuracy + '%' : '-';
+        document.getElementById('menu-streak').textContent = streak;
+    }
+
+    startSession() {
+        document.getElementById('summary-modal').style.display = 'none';
+        this.sessionQueue = this.srs.getSessionBatch(this.sessionSize);
+        this.sessionIndex = 0;
+        this.sessionErrors = 0;
+        this.loadCard();
+    }
+
+    loadCard() {
+        if (this.sessionIndex >= this.sessionQueue.length) {
+            this.endSession();
+            return;
+        }
+
+        this.currentConsonant = this.sessionQueue[this.sessionIndex];
+        
+        const pct = (this.sessionIndex / this.sessionQueue.length) * 100;
+        document.getElementById('session-bar').style.width = pct + "%";
+
+        this.updateCardStack();
+
+        this.card.classList.remove('animating', 'shake', 'error');
+        this.card.style.transform = '';
+        this.card.style.borderColor = 'transparent';
+        this.card.style.opacity = '1';
+        this.resetOverlays();
+
+        document.getElementById('char-display').innerText = this.currentConsonant.char;
+        document.getElementById('name-display').innerText = this.currentConsonant.name;
+        document.getElementById('meaning-display').innerText = this.currentConsonant.meaning;
+    }
+
+    updateCardStack() {
+        const container = document.getElementById('card-stack');
+        
+        const existingStack = container.querySelectorAll('.card-stack-behind');
+        existingStack.forEach(el => el.remove());
+
+        const remaining = this.sessionQueue.length - this.sessionIndex - 1;
+        const stackCount = Math.min(remaining, 2);
+        
+        for (let i = 0; i < stackCount; i++) {
+            const stackCard = document.createElement('div');
+            stackCard.className = 'card-stack-behind';
+            container.insertBefore(stackCard, this.card);
+        }
+    }
+
+    endSession() {
+        const correct = this.sessionSize - this.sessionErrors;
+        const accuracy = Math.floor((correct / this.sessionSize) * 100);
+        
+        document.getElementById('modal-correct').textContent = correct;
+        document.getElementById('modal-errors').textContent = this.sessionErrors;
+        document.getElementById('modal-accuracy').textContent = accuracy + '%';
+        
+        let icon = '🎉';
+        let title = 'Amazing!';
+        
+        if (accuracy === 100) {
+            icon = '🏆';
+            title = 'Perfect!';
+        } else if (accuracy >= 80) {
+            icon = '🎉';
+            title = 'Great Job!';
+        } else if (accuracy >= 60) {
+            icon = '👍';
+            title = 'Good Work!';
+        } else {
+            icon = '💪';
+            title = 'Keep Practicing!';
+        }
+        
+        document.getElementById('result-icon').textContent = icon;
+        document.getElementById('result-title').textContent = title;
+        
+        this.srs.finishSession(this.sessionErrors);
+        
+        document.getElementById('session-bar').style.width = "100%";
+        document.getElementById('summary-modal').style.display = 'flex';
+        
+        this.updateGlobalStats();
+        this.updateMenuStats();
+    }
+
+    updateGlobalStats() {
+        const m = this.srs.getGlobalMastery();
+        document.getElementById('mastery-score').innerText = m;
+        document.getElementById('mastery-bar').style.width = m + "%";
+    }
+
+    playAudio() {
+        this.card.style.backgroundColor = "#F0F8FF";
+        setTimeout(() => this.card.style.backgroundColor = "var(--card-bg)", 100);
+
+        if (this.currentConsonant && this.currentConsonant.id) {
+            const audioUrl = `https://storage.googleapis.com/funtolearnthai/audio/consonants/${this.currentConsonant.id}.mp3`;
+            const audio = new Audio(audioUrl);
+            audio.play().catch(err => {
+                console.error("Audio playback failed:", err);
+            });
+        }
+    }
+
+    attachEvents() {
+        this.card.addEventListener('pointerdown', (e) => this.onDragStart(e));
+        document.addEventListener('pointermove', (e) => this.onDragMove(e));
+        document.addEventListener('pointerup', (e) => this.onDragEnd(e));
+    }
+
+    onDragStart(e) {
+        this.isDragging = true;
+        this.isTap = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.card.classList.remove('animating');
+        this.card.setPointerCapture(e.pointerId);
+    }
+
+    onDragMove(e) {
+        if (!this.isDragging) return;
+
+        this.currentX = e.clientX - this.startX;
+        this.currentY = e.clientY - this.startY;
+
+        if (Math.abs(this.currentX) > 10 || Math.abs(this.currentY) > 10) {
+            this.isTap = false;
+        }
+
+        const rotate = this.currentX * 0.05;
+        this.card.style.transform = `translate(${this.currentX}px, ${this.currentY}px) rotate(${rotate}deg)`;
+
+        this.handleVisualFeedback();
+    }
+
+    handleVisualFeedback() {
+        if(this.isTap) return;
+
+        const tY = 50; 
+        const tX = 50; 
+
+        this.resetOverlays();
+
+        if (Math.abs(this.currentY) > Math.abs(this.currentX) && Math.abs(this.currentY) > tY) {
+            if (this.currentY < 0) {
+                this.overlays[0].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
+                this.card.style.borderColor = "var(--color-high)";
+            } else {
+                this.overlays[1].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
+                this.card.style.borderColor = "var(--color-low)";
+            }
+        } else if (this.currentX > tX) {
+            this.overlays[2].style.opacity = Math.min(Math.abs(this.currentX)/150, 1);
+            this.card.style.borderColor = "var(--color-mid)";
+        } else {
+             this.card.style.borderColor = "transparent";
+        }
+    }
+
+    onDragEnd(e) {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+        this.card.classList.add('animating');
+
+        if (this.isTap) {
+            this.playAudio();
+            this.card.style.transform = 'translate(0,0)';
+            return;
+        }
+
+        const SWIPE_THRESHOLD = 100;
+        let action = null;
+
+        if (Math.abs(this.currentY) > Math.abs(this.currentX)) {
+            if (Math.abs(this.currentY) > SWIPE_THRESHOLD) {
+                action = this.currentY < 0 ? 'high' : 'low';
+            }
+        } else {
+            if (this.currentX > SWIPE_THRESHOLD) {
+                action = 'mid';
+            }
+        }
+
+        if (action) {
+            this.submitAnswer(action);
+        } else {
+            this.card.style.transform = 'translate(0,0)';
+            this.card.style.borderColor = 'transparent';
+            this.resetOverlays();
+        }
+    }
+
+    resetOverlays() {
+        this.overlays.forEach(o => o.style.opacity = 0);
+    }
+
+    submitAnswer(userGuess) {
+        const correctAnswer = this.currentConsonant.class;
+        const isCorrect = userGuess === correctAnswer;
+
+        if (isCorrect) {
+            const endX = userGuess === 'mid' ? 500 : 0;
+            const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
+            
+            this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
+            this.card.style.opacity = '0';
+
+            this.srs.processResult(this.currentConsonant.char, true);
+            this.sessionIndex++;
+            
+            setTimeout(() => {
+                this.loadCard();
+            }, 300);
+        } else {
+            this.card.style.transform = 'translate(0,0)';
+            this.card.classList.add('shake', 'error');
+            document.body.classList.add('screen-error');
+            this.card.style.borderColor = 'transparent';
+            
+            this.sessionErrors++;
+            this.srs.processResult(this.currentConsonant.char, false);
+
+            setTimeout(() => {
+                this.card.classList.remove('shake', 'error');
+                document.body.classList.remove('screen-error');
+                this.card.style.borderColor = 'transparent';
+                this.resetOverlays();
+            }, 600);
+        }
+    }
+
+    showSettings() {
+        document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    resetData() {
+        if(confirm("This will erase all your progress. Are you sure?")) {
+            this.srs.reset();
+            this.updateMenuStats();
+            this.updateGlobalStats();
+            document.getElementById('settings-modal').style.display='none';
+            alert("Progress reset successfully!");
+        }
+    }
+}
+
+const app = new App();
+
+</script>
+</body>
+</html>
