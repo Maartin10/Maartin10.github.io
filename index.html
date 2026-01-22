@@ -1096,7 +1096,10 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (window.hapticConfirm) hapticConfirm();
+            if (window.haptic){
+                haptic();
+                haptic();
+            }
             const endX = userGuess === 'mid' ? 500 : 0;
             const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
             
@@ -1110,7 +1113,11 @@ class App {
                 this.loadCard();
             }, 300);
         } else {
-            if (window.hapticError) hapticError();
+            if (window.haptic){
+                haptic();
+                haptic();
+                haptic();
+            }
             this.card.style.transform = 'translate(0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
