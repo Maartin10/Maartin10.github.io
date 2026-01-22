@@ -817,7 +817,6 @@ class App {
         this.settings = loadSettings();
         this.card = document.getElementById('active-card');
         this.overlays = document.querySelectorAll('.overlay');
-        this.haptic = window.haptic;
         
         this.sessionQueue = [];
         this.sessionSize = 10;
@@ -1097,35 +1096,48 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {
-            if (this.haptic) this.haptic();
-            const endX = userGuess === 'mid' ? 500 : 0;
-            const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
-            
-            this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
-            this.card.style.opacity = '0';
+            // Trigger haptic feedback first
+            if (window.hapticConfirm) window.hapticConfirm();
+            else if (window.haptic) window.haptic();
 
+            // Srs and state index update can happen immediately
             this.srs.processResult(this.currentConsonant.char, true);
             this.sessionIndex++;
-            
+
+            // Tiny delay before heavy card animation to ensure haptic triggers reliably
             setTimeout(() => {
-                this.loadCard();
-            }, 300);
+                const endX = userGuess === 'mid' ? 500 : 0;
+                const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
+                
+                this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
+                this.card.style.opacity = '0';
+
+                setTimeout(() => {
+                    this.loadCard();
+                }, 300);
+            }, 10);
         } else {
-            if (this.haptic) this.haptic();
-            this.card.style.transform = 'translate(0,0)';
-            this.card.classList.add('shake', 'error');
-            document.body.classList.add('screen-error');
-            this.card.style.borderColor = 'transparent';
-            
+            // Trigger error haptic feedback
+            if (window.hapticError) window.hapticError();
+            else if (window.haptic) window.haptic();
+
             this.sessionErrors++;
             this.srs.processResult(this.currentConsonant.char, false);
 
+            // Tiny delay before heavy card animation
             setTimeout(() => {
-                this.card.classList.remove('shake', 'error');
-                document.body.classList.remove('screen-error');
+                this.card.style.transform = 'translate(0,0)';
+                this.card.classList.add('shake', 'error');
+                document.body.classList.add('screen-error');
                 this.card.style.borderColor = 'transparent';
-                this.resetOverlays();
-            }, 600);
+                
+                setTimeout(() => {
+                    this.card.classList.remove('shake', 'error');
+                    document.body.classList.remove('screen-error');
+                    this.card.style.borderColor = 'transparent';
+                    this.resetOverlays();
+                }, 600);
+            }, 10);
         }
     }
 
