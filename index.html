@@ -211,13 +211,13 @@
         }
 
         .card-stack-behind:nth-child(1) {
-            transform: translateY(8px) translateX(4px);
+            transform: translate3d(4px, 8px, 0);
             opacity: 0.7;
             z-index: 0;
         }
 
         .card-stack-behind:nth-child(2) {
-            transform: translateY(16px) translateX(8px);
+            transform: translate3d(8px, 16px, 0);
             opacity: 0.4;
             z-index: -1;
         }
@@ -235,9 +235,13 @@
             justify-content: center;
             text-align: center;
             cursor: grab;
-            transition: transform 0.1s linear;
             border: 4px solid transparent;
             z-index: 2;
+            /* Performance hints */
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
         }
 
         .card.error {
@@ -298,8 +302,9 @@
             color: white;
             text-transform: uppercase;
             pointer-events: none;
-            transition: opacity 0.2s;
+            transition: opacity 0.1s linear;
             z-index: 3;
+            will-change: opacity;
         }
 
         /* --- Controls --- */
@@ -829,6 +834,8 @@ class App {
         this.currentX = 0;
         this.currentY = 0;
         this.isTap = false;
+        this.ticking = false;
+        this.lastActiveOverlay = -1;
 
         this.init();
     }
@@ -915,7 +922,7 @@ class App {
         this.updateCardStack();
 
         this.card.classList.remove('animating', 'shake', 'error');
-        this.card.style.transform = '';
+        this.card.style.transform = 'translate3d(0,0,0)';
         this.card.style.borderColor = 'transparent';
         this.card.style.opacity = '1';
         this.resetOverlays();
@@ -1024,33 +1031,54 @@ class App {
             this.isTap = false;
         }
 
-        const rotate = this.currentX * 0.05;
-        this.card.style.transform = `translate(${this.currentX}px, ${this.currentY}px) rotate(${rotate}deg)`;
-
-        this.handleVisualFeedback();
+        if (!this.ticking) {
+            window.requestAnimationFrame(() => {
+                if (!this.isDragging) {
+                    this.ticking = false;
+                    return;
+                }
+                
+                const rotate = this.currentX * 0.05;
+                // Use translate3d for hardware acceleration
+                this.card.style.transform = `translate3d(${this.currentX}px, ${this.currentY}px, 0) rotate(${rotate}deg)`;
+                
+                this.handleVisualFeedback();
+                this.ticking = false;
+            });
+            this.ticking = true;
+        }
     }
 
     handleVisualFeedback() {
         if(this.isTap) return;
 
-        const tY = 50; 
-        const tX = 50; 
-
-        this.resetOverlays();
+        const tY = 40; 
+        const tX = 40; 
+        
+        let activeOverlayIndex = -1;
+        let borderColor = "transparent";
 
         if (Math.abs(this.currentY) > Math.abs(this.currentX) && Math.abs(this.currentY) > tY) {
             if (this.currentY < 0) {
-                this.overlays[0].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
-                this.card.style.borderColor = "var(--color-high)";
+                activeOverlayIndex = 0;
+                borderColor = "var(--color-high)";
             } else {
-                this.overlays[1].style.opacity = Math.min(Math.abs(this.currentY)/150, 1);
-                this.card.style.borderColor = "var(--color-low)";
+                activeOverlayIndex = 1;
+                borderColor = "var(--color-low)";
             }
-        } else if (this.currentX > tX) {
-            this.overlays[2].style.opacity = Math.min(Math.abs(this.currentX)/150, 1);
-            this.card.style.borderColor = "var(--color-mid)";
-        } else {
-             this.card.style.borderColor = "transparent";
+        } else if (this.currentX > tX && Math.abs(this.currentX) > Math.abs(this.currentY)) {
+            activeOverlayIndex = 2;
+            borderColor = "var(--color-mid)";
+        }
+
+        // Only update if state changed or opacity needs refinement
+        if (this.lastActiveOverlay !== activeOverlayIndex) {
+            this.resetOverlays();
+            if (activeOverlayIndex !== -1) {
+                this.overlays[activeOverlayIndex].style.opacity = "0.8";
+            }
+            this.card.style.borderColor = borderColor;
+            this.lastActiveOverlay = activeOverlayIndex;
         }
     }
 
@@ -1061,7 +1089,7 @@ class App {
 
         if (this.isTap) {
             this.playAudio();
-            this.card.style.transform = 'translate(0,0)';
+            this.card.style.transform = 'translate3d(0,0,0)';
             return;
         }
 
@@ -1081,7 +1109,7 @@ class App {
         if (action) {
             this.submitAnswer(action);
         } else {
-            this.card.style.transform = 'translate(0,0)';
+            this.card.style.transform = 'translate3d(0,0,0)';
             this.card.style.borderColor = 'transparent';
             this.resetOverlays();
         }
@@ -1089,6 +1117,7 @@ class App {
 
     resetOverlays() {
         this.overlays.forEach(o => o.style.opacity = 0);
+        this.lastActiveOverlay = -1;
     }
 
     submitAnswer(userGuess) {
@@ -1097,10 +1126,10 @@ class App {
 
         if (isCorrect) {
             if (window.haptic){ haptic(); }
-            const endX = userGuess === 'mid' ? 500 : 0;
-            const endY = userGuess === 'high' ? -500 : (userGuess === 'low' ? 500 : 0);
+            const endX = userGuess === 'mid' ? 800 : 0;
+            const endY = userGuess === 'high' ? -800 : (userGuess === 'low' ? 800 : 0);
             
-            this.card.style.transform = `translate(${endX}px, ${endY}px) rotate(20deg)`;
+            this.card.style.transform = `translate3d(${endX}px, ${endY}px, 0) rotate(${userGuess === 'mid' ? 45 : 0}deg)`;
             this.card.style.opacity = '0';
 
             this.srs.processResult(this.currentConsonant.char, true);
@@ -1111,7 +1140,7 @@ class App {
             }, 300);
         } else {
             if (window.haptic) haptic();
-            this.card.style.transform = 'translate(0,0)';
+            this.card.style.transform = 'translate3d(0,0,0)';
             this.card.classList.add('shake', 'error');
             document.body.classList.add('screen-error');
             this.card.style.borderColor = 'transparent';
