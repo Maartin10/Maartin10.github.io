@@ -934,7 +934,6 @@ class App {
         this.settings = loadSettings();
         this.card = document.getElementById('active-card');
         this.overlays = document.querySelectorAll('.overlay');
-        this.window = window;
         
         this.sessionQueue = [];
         this.sessionSize = 10;
@@ -1270,9 +1269,6 @@ class App {
         const isCorrect = userGuess === correctAnswer;
 
         if (isCorrect) {            
-            // Raise custom event on window
-            this.window.dispatchEvent(new CustomEvent('correct'));
-
             // Directions for swiping away
             const endX = userGuess === 'mid' ? 600 : 0;
             const endY = userGuess === 'high' ? -600 : (userGuess === 'low' ? 600 : 0);
@@ -1304,9 +1300,6 @@ class App {
                 }, 50);
             }, 300);
         } else {
-            // Raise custom event on window
-            this.window.dispatchEvent(new CustomEvent('incorrect'));
-
             // 1. First, slide the card back to center smoothly
             this.card.style.transform = 'translate3d(0,0,0)';
             this.card.style.borderColor = 'transparent';
@@ -1344,14 +1337,6 @@ class App {
 }
 
 const app = new App();
-
-// Global haptic feedback listeners
-window.addEventListener('correct', () => {
-    if (window.hapticConfirm) window.hapticConfirm();
-});
-window.addEventListener('incorrect', () => {
-    if (window.hapticError) window.hapticError();
-});
 
 </script>
 </body>
