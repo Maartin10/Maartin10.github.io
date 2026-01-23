@@ -934,6 +934,7 @@ class App {
         this.settings = loadSettings();
         this.card = document.getElementById('active-card');
         this.overlays = document.querySelectorAll('.overlay');
+        this.window = window;
         
         this.sessionQueue = [];
         this.sessionSize = 10;
@@ -1270,7 +1271,7 @@ class App {
 
         if (isCorrect) {            
             // Raise custom event on window
-            window.dispatchEvent(new CustomEvent('correct'));
+            this.window.dispatchEvent(new CustomEvent('correct'));
 
             // Directions for swiping away
             const endX = userGuess === 'mid' ? 600 : 0;
@@ -1304,7 +1305,7 @@ class App {
             }, 300);
         } else {
             // Raise custom event on window
-            window.dispatchEvent(new CustomEvent('incorrect'));
+            this.window.dispatchEvent(new CustomEvent('incorrect'));
 
             // 1. First, slide the card back to center smoothly
             this.card.style.transform = 'translate3d(0,0,0)';
