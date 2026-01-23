@@ -1059,6 +1059,7 @@ class App {
 
         this.card.classList.remove('animating', 'shake', 'error');
         this.card.style.transform = 'translate3d(0,0,0)';
+        this.card.style.backgroundColor = '';
         this.card.style.borderColor = 'transparent';
         this.card.style.opacity = '1';
         this.resetOverlays();
@@ -1139,7 +1140,7 @@ class App {
     playAudio() {
         if (window.haptic) haptic();
         this.card.style.backgroundColor = "#F0F8FF";
-        setTimeout(() => this.card.style.backgroundColor = "var(--card-bg)", 100);
+        setTimeout(() => this.card.style.backgroundColor = "", 100);
 
         if (this.currentConsonant && this.currentConsonant.id) {
             const audioUrl = `https://storage.googleapis.com/funtolearnthai/audio/consonants/${this.currentConsonant.id}.mp3`;
