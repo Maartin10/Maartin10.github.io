@@ -1223,6 +1223,7 @@ class App {
             }
             this.card.style.borderColor = borderColor;
             this.lastActiveOverlay = activeOverlayIndex;
+            if(window.haptic) haptic();
         }
     }
 
@@ -1251,6 +1252,7 @@ class App {
         }
 
         if (action) {
+            if(window.haptic) haptic();
             this.submitAnswer(action);
         } else {
             this.card.style.transform = 'translate3d(0,0,0)';
