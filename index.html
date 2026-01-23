@@ -27,6 +27,7 @@
             background-color: var(--bg-color);
             font-family: var(--font-main);
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -45,6 +46,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            height: 100dvh;
             padding: 20px;
         }
 
@@ -52,6 +54,7 @@
             display: none;
             flex-direction: column;
             height: 100vh;
+            height: 100dvh;
         }
 
         .menu-logo {
@@ -513,6 +516,68 @@
         }
         .shake { animation: shake 0.4s ease-in-out; }
 
+        /* --- Mobile Responsiveness Adjustments --- */
+        @media (max-height: 740px) {
+            .card-container {
+                width: 270px;
+                height: 360px;
+            }
+            .thai-char {
+                font-size: 100px;
+            }
+            .controls {
+                height: 120px;
+                padding-bottom: 15px;
+            }
+            .legend-item {
+                font-size: 11px;
+                padding: 6px;
+            }
+            .menu-logo {
+                font-size: 36px;
+            }
+            .stats-grid {
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .stat-card {
+                padding: 12px;
+            }
+            .stat-value {
+                font-size: 28px;
+            }
+            .menu-subtitle {
+                margin-bottom: 20px;
+            }
+            .modal-content {
+                padding: 25px 20px;
+            }
+            .result-icon {
+                font-size: 48px;
+            }
+            .modal-title {
+                font-size: 24px;
+            }
+            .stats-row {
+                margin: 15px 0;
+                padding: 15px 0;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .card-container {
+                width: 260px;
+                height: 340px;
+            }
+            .legend-grid {
+                gap: 5px;
+            }
+            .legend-item {
+                font-size: 10px;
+            }
+        }
+
+
     </style>
 </head>
 <body>
@@ -633,6 +698,19 @@
                 </div>
             </div>
 
+            <div class="setting-card" id="include-rare-toggle">
+                <div class="setting-left">
+                    <div class="setting-icon">💎</div>
+                    <div class="setting-text">
+                        <div class="setting-title">Include Rare Letters</div>
+                        <div class="setting-subtitle">Include ฃ, ฅ, ฌ, ฎ, ฏ, etc.</div>
+                    </div>
+                </div>
+                <div class="setting-switch">
+                    <div class="switch-knob"></div>
+                </div>
+            </div>
+
             <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" 
                     onclick="if(window.haptic) haptic();app.resetData()">Reset All Progress</button>
             <button class="btn-secondary" onclick="if(window.haptic) haptic();document.getElementById('settings-modal').style.display='none'">Close</button>
@@ -645,23 +723,23 @@
 const CONSONANTS = [
     { id: 1, char: "ก", name: "Gor Gai", meaning: "Chicken", class: "mid" },
     { id: 2, char: "ข", name: "Kor Kai", meaning: "Egg", class: "high" },
-    { id: 3, char: "ฃ", name: "Kor Khuad", meaning: "Bottle (Obsolete)", class: "high" },
+    // { id: 3, char: "ฃ", name: "Kor Khuad", meaning: "Bottle (Obsolete)", class: "high", isRare: true },
     { id: 4, char: "ค", name: "Kor Kwai", meaning: "Buffalo", class: "low" },
-    { id: 5, char: "ฅ", name: "Kor Kon", meaning: "Person (Obsolete)", class: "low" },
-    { id: 6, char: "ฆ", name: "Kor Ra-Kang", meaning: "Bell", class: "low" },
+    // { id: 5, char: "ฅ", name: "Kor Kon", meaning: "Person (Obsolete)", class: "low", isRare: true },
+    { id: 6, char: "ฆ", name: "Kor Ra-Kang", meaning: "Bell", class: "low", isRare: true },
     { id: 7, char: "ง", name: "Ngor Ngu", meaning: "Snake", class: "low" },
     { id: 8, char: "จ", name: "Jor Jan", meaning: "Plate", class: "mid" },
     { id: 9, char: "ฉ", name: "Chor Ching", meaning: "Cymbals", class: "high" },
     { id: 10, char: "ช", name: "Chor Chang", meaning: "Elephant", class: "low" },
     { id: 11, char: "ซ", name: "Sor So", meaning: "Chain", class: "low" },
-    { id: 12, char: "ฌ", name: "Chor Cher", meaning: "Tree", class: "low" },
+    { id: 12, char: "ฌ", name: "Chor Cher", meaning: "Tree", class: "low", isRare: true },
     { id: 13, char: "ญ", name: "Yor Ying", meaning: "Woman", class: "low" },
-    { id: 14, char: "ฎ", name: "Dor Cha-da", meaning: "Headdress", class: "mid" },
-    { id: 15, char: "ฏ", name: "Tor Pa-tak", meaning: "Goad", class: "mid" },
-    { id: 16, char: "ฐ", name: "Thor Than", meaning: "Base", class: "high" },
-    { id: 17, char: "ฑ", name: "Thor Montho", meaning: "Giantess", class: "low" },
-    { id: 18, char: "ฒ", name: "Thor Phu-tao", meaning: "Elder", class: "low" },
-    { id: 19, char: "ณ", name: "Nor Nen", meaning: "Novice Monk", class: "low" },
+    { id: 14, char: "ฎ", name: "Dor Cha-da", meaning: "Headdress", class: "mid", isRare: true },
+    { id: 15, char: "ฏ", name: "Tor Pa-tak", meaning: "Goad", class: "mid", isRare: true },
+    { id: 16, char: "ฐ", name: "Thor Than", meaning: "Base", class: "high", isRare: true },
+    { id: 17, char: "ฑ", name: "Thor Montho", meaning: "Giantess", class: "low", isRare: true },
+    { id: 18, char: "ฒ", name: "Thor Phu-tao", meaning: "Elder", class: "low", isRare: true },
+    { id: 19, char: "ณ", name: "Nor Nen", meaning: "Novice Monk", class: "low", isRare: true },
     { id: 20, char: "ด", name: "Dor Dek", meaning: "Child", class: "mid" },
     { id: 21, char: "ต", name: "Tor Tao", meaning: "Turtle", class: "mid" },
     { id: 22, char: "ถ", name: "Thor Thung", meaning: "Sack", class: "high" },
@@ -684,7 +762,7 @@ const CONSONANTS = [
     { id: 39, char: "ษ", name: "Sor Ruesi", meaning: "Hermit", class: "high" },
     { id: 40, char: "ส", name: "Sor Suea", meaning: "Tiger", class: "high" },
     { id: 41, char: "ห", name: "Hor Hip", meaning: "Chest", class: "high" },
-    { id: 42, char: "ฬ", name: "Lor Chu-la", meaning: "Kite", class: "low" },
+    { id: 42, char: "ฬ", name: "Lor Chu-la", meaning: "Kite", class: "low", isRare: true },
     { id: 43, char: "อ", name: "Or Ang", meaning: "Basin", class: "mid" },
     { id: 44, char: "ฮ", name: "Hor Nok-huk", meaning: "Owl", class: "low" }
 ];
@@ -693,7 +771,7 @@ const SETTINGS_KEY = 'thai_sorter_settings';
 
 function loadSettings() {
     const stored = localStorage.getItem(SETTINGS_KEY);
-    return stored ? JSON.parse(stored) : { hideEnglish: false };
+    return stored ? JSON.parse(stored) : { hideEnglish: false, includeRare: true };
 }
 
 function saveSettings(settings) {
@@ -738,15 +816,17 @@ class SRSManager {
         this.stats = this.loadStats();
     }
 
-    getSessionBatch(count) {
+    getSessionBatch(count, settings) {
         const now = Date.now();
         
-        let dueItems = CONSONANTS.filter(c => {
+        const filteredConsonants = CONSONANTS.filter(c => settings.includeRare || !c.isRare);
+        
+        let dueItems = filteredConsonants.filter(c => {
             const d = this.data[c.char];
             return d.level > 0 && d.nextReview <= now;
         });
 
-        let newItems = CONSONANTS.filter(c => this.data[c.char].level === 0);
+        let newItems = filteredConsonants.filter(c => this.data[c.char].level === 0);
 
         let batch = [];
 
@@ -763,7 +843,7 @@ class SRSManager {
         }
 
         while (batch.length < count) {
-            const randomItem = CONSONANTS[Math.floor(Math.random() * CONSONANTS.length)];
+            const randomItem = filteredConsonants[Math.floor(Math.random() * filteredConsonants.length)];
             batch.push(randomItem);
         }
 
@@ -797,15 +877,19 @@ class SRSManager {
         this.saveData();
     }
 
-    getGlobalMastery() {
-        let totalLevels = CONSONANTS.length * 5;
+    getGlobalMastery(settings) {
+        const filteredConsonants = CONSONANTS.filter(c => settings.includeRare || !c.isRare);
+        let totalLevels = filteredConsonants.length * 5;
         let currentLevels = 0;
-        Object.values(this.data).forEach(d => currentLevels += d.level);
+        filteredConsonants.forEach(c => {
+            currentLevels += this.data[c.char].level;
+        });
         return Math.floor((currentLevels / totalLevels) * 100);
     }
 
-    getLearnedCount() {
-        return Object.values(this.data).filter(d => d.level > 0).length;
+    getLearnedCount(settings) {
+        const filteredConsonants = CONSONANTS.filter(c => settings.includeRare || !c.isRare);
+        return filteredConsonants.filter(c => this.data[c.char].level > 0).length;
     }
 
     getGlobalAccuracy() {
@@ -873,24 +957,32 @@ class App {
     }
     
     initSettingsUI() {
-        const toggle = document.getElementById('hide-english-toggle');
+        const hideEnglishToggle = document.getElementById('hide-english-toggle');
+        const includeRareToggle = document.getElementById('include-rare-toggle');
 
-        if (this.settings.hideEnglish) {
-            toggle.classList.add('active');
-        }
+        hideEnglishToggle.classList.toggle('active', this.settings.hideEnglish);
+        includeRareToggle.classList.toggle('active', this.settings.includeRare);
 
-        toggle.addEventListener('click', () => {
+        hideEnglishToggle.addEventListener('click', () => {
             if (window.haptic) haptic();
             this.settings.hideEnglish = !this.settings.hideEnglish;
-            toggle.classList.toggle('active', this.settings.hideEnglish);
+            hideEnglishToggle.classList.toggle('active', this.settings.hideEnglish);
             saveSettings(this.settings);
             this.applyCardVisibility();
+        });
+
+        includeRareToggle.addEventListener('click', () => {
+            if (window.haptic) haptic();
+            this.settings.includeRare = !this.settings.includeRare;
+            includeRareToggle.classList.toggle('active', this.settings.includeRare);
+            saveSettings(this.settings);
+            this.updateMenuStats();
         });
     }
 
     updateMenuStats() {
-        const mastery = this.srs.getGlobalMastery();
-        const learned = this.srs.getLearnedCount();
+        const mastery = this.srs.getGlobalMastery(this.settings);
+        const learned = this.srs.getLearnedCount(this.settings);
         const accuracy = this.srs.getGlobalAccuracy();
         const streak = this.srs.stats.currentStreak;
 
@@ -902,7 +994,7 @@ class App {
 
     startSession() {
         document.getElementById('summary-modal').style.display = 'none';
-        this.sessionQueue = this.srs.getSessionBatch(this.sessionSize);
+        this.sessionQueue = this.srs.getSessionBatch(this.sessionSize, this.settings);
         this.sessionIndex = 0;
         this.sessionErrors = 0;
         this.loadCard();
@@ -987,7 +1079,7 @@ class App {
     }
 
     updateGlobalStats() {
-        const m = this.srs.getGlobalMastery();
+        const m = this.srs.getGlobalMastery(this.settings);
         document.getElementById('mastery-score').innerText = m;
         document.getElementById('mastery-bar').style.width = m + "%";
     }
@@ -1126,34 +1218,58 @@ class App {
 
         if (isCorrect) {
             if (window.haptic){ haptic(); }
-            const endX = userGuess === 'mid' ? 800 : 0;
-            const endY = userGuess === 'high' ? -800 : (userGuess === 'low' ? 800 : 0);
             
-            this.card.style.transform = `translate3d(${endX}px, ${endY}px, 0) rotate(${userGuess === 'mid' ? 45 : 0}deg)`;
+            // Directions for swiping away
+            const endX = userGuess === 'mid' ? 600 : 0;
+            const endY = userGuess === 'high' ? -600 : (userGuess === 'low' ? 600 : 0);
+            
+            // Animate away with fade
+            this.card.style.transform = `translate3d(${endX}px, ${endY}px, 0) scale(0.8) rotate(${userGuess === 'mid' ? 45 : 0}deg)`;
             this.card.style.opacity = '0';
 
             this.srs.processResult(this.currentConsonant.char, true);
             this.sessionIndex++;
             
+            // Wait for fade-out before loading next card
             setTimeout(() => {
+                // Pre-reset the card (transparent) at center before appearing
+                this.card.classList.remove('animating');
+                this.card.style.transform = 'translate3d(0,0,0) scale(0.9)';
+                this.card.style.opacity = '0';
+                
+                // Forces reflow
+                void this.card.offsetWidth; 
+                
                 this.loadCard();
+                
+                // Fade in the new card
+                setTimeout(() => {
+                    this.card.classList.add('animating');
+                    this.card.style.transform = 'translate3d(0,0,0) scale(1)';
+                    this.card.style.opacity = '1';
+                }, 50);
             }, 300);
         } else {
             if (window.haptic) haptic();
-            this.card.style.transform = 'translate3d(0,0,0)';
-            this.card.classList.add('shake', 'error');
-            document.body.classList.add('screen-error');
-            this.card.style.borderColor = 'transparent';
             
-            this.sessionErrors++;
-            this.srs.processResult(this.currentConsonant.char, false);
-
+            // 1. First, slide the card back to center smoothly
+            this.card.style.transform = 'translate3d(0,0,0)';
+            this.card.style.borderColor = 'transparent';
+            this.resetOverlays();
+            
+            // 2. Once centered, perform the shake and error visual
             setTimeout(() => {
-                this.card.classList.remove('shake', 'error');
-                document.body.classList.remove('screen-error');
-                this.card.style.borderColor = 'transparent';
-                this.resetOverlays();
-            }, 600);
+                this.card.classList.add('shake', 'error');
+                document.body.classList.add('screen-error');
+                
+                this.sessionErrors++;
+                this.srs.processResult(this.currentConsonant.char, false);
+
+                setTimeout(() => {
+                    this.card.classList.remove('shake', 'error');
+                    document.body.classList.remove('screen-error');
+                }, 500);
+            }, 250); // Matches transition duration roughly
         }
     }
 
