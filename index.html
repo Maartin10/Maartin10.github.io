@@ -1151,7 +1151,7 @@ class App {
     }
 
     attachEvents() {
-        this.card.addEventListener('pointerdown', (e) => this.onDragStart(e));
+        this.card.addEventListener('pointerdown', (e) => {if(window.haptic) haptic(); this.onDragStart(e)});
         document.addEventListener('pointermove', (e) => this.onDragMove(e));
         document.addEventListener('pointerup', (e) => this.onDragEnd(e));
     }
@@ -1223,7 +1223,6 @@ class App {
             }
             this.card.style.borderColor = borderColor;
             this.lastActiveOverlay = activeOverlayIndex;
-            if(window.haptic) haptic();
         }
     }
 
@@ -1252,7 +1251,6 @@ class App {
         }
 
         if (action) {
-            if(window.haptic) haptic();
             this.submitAnswer(action);
         } else {
             this.card.style.transform = 'translate3d(0,0,0)';
