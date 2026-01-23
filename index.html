@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Thai Consonant Swipe</title>
+    <!-- Preload fonts to avoid flickering -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@400;700&family=Noto+Sans+Thai:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #131F24;
@@ -17,6 +21,8 @@
             --color-low: #58CC02;  /* Green - Down */
             
             --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-thai-looped: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-thai-modern: 'Noto Sans Thai', sans-serif;
         }
 
         * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -267,6 +273,12 @@
             color: var(--text-color);
             line-height: 1.2;
             pointer-events: none;
+            font-family: var(--font-thai-looped);
+            transition: font-family 0.1s;
+        }
+        
+        .thai-char.modern {
+            font-family: var(--font-thai-modern);
         }
 
         .phonetic {
@@ -395,6 +407,7 @@
             align-items: center;
             cursor: pointer;
             transition: background 0.2s, border 0.2s;
+            margin: 6px 0;
         }
 
         .setting-card:hover {
@@ -415,12 +428,14 @@
             font-size: 16px;
             font-weight: 800;
             color: white;
+            text-align: left;
         }
 
         .setting-subtitle {
             font-size: 12px;
             color: var(--sub-text);
             margin-top: 2px;
+            text-align: left;
         }
 
         /* --- Toggle Switch --- */
@@ -711,6 +726,19 @@
                 </div>
             </div>
 
+            <div class="setting-card" id="mix-fonts-toggle">
+                <div class="setting-left">
+                    <div class="setting-icon">🎨</div>
+                    <div class="setting-text">
+                        <div class="setting-title">Modern Script Mix</div>
+                        <div class="setting-subtitle">Looped and loopless fonts</div>
+                    </div>
+                </div>
+                <div class="setting-switch">
+                    <div class="switch-knob"></div>
+                </div>
+            </div>
+
             <button class="btn-primary" style="background:#FF4B4B; box-shadow: 0 4px 0 #cc0000; margin-top:20px;" 
                     onclick="if(window.haptic) haptic();app.resetData()">Reset All Progress</button>
             <button class="btn-secondary" onclick="if(window.haptic) haptic();document.getElementById('settings-modal').style.display='none'">Close</button>
@@ -771,7 +799,7 @@ const SETTINGS_KEY = 'thai_sorter_settings';
 
 function loadSettings() {
     const stored = localStorage.getItem(SETTINGS_KEY);
-    return stored ? JSON.parse(stored) : { hideEnglish: false, includeRare: true };
+    return stored ? JSON.parse(stored) : { hideEnglish: false, includeRare: true, mixFonts: false };
 }
 
 function saveSettings(settings) {
@@ -959,9 +987,11 @@ class App {
     initSettingsUI() {
         const hideEnglishToggle = document.getElementById('hide-english-toggle');
         const includeRareToggle = document.getElementById('include-rare-toggle');
+        const mixFontsToggle = document.getElementById('mix-fonts-toggle');
 
         hideEnglishToggle.classList.toggle('active', this.settings.hideEnglish);
         includeRareToggle.classList.toggle('active', this.settings.includeRare);
+        mixFontsToggle.classList.toggle('active', this.settings.mixFonts);
 
         hideEnglishToggle.addEventListener('click', () => {
             if (window.haptic) haptic();
@@ -977,6 +1007,20 @@ class App {
             includeRareToggle.classList.toggle('active', this.settings.includeRare);
             saveSettings(this.settings);
             this.updateMenuStats();
+        });
+
+        mixFontsToggle.addEventListener('click', () => {
+            if (window.haptic) haptic();
+            this.settings.mixFonts = !this.settings.mixFonts;
+            mixFontsToggle.classList.toggle('active', this.settings.mixFonts);
+            saveSettings(this.settings);
+            // Re-apply to current card for instant feedback
+            const display = document.getElementById('char-display');
+            if (this.settings.mixFonts && Math.random() > 0.5) {
+                display.classList.add('modern');
+            } else {
+                display.classList.remove('modern');
+            }
         });
     }
 
@@ -1019,7 +1063,15 @@ class App {
         this.card.style.opacity = '1';
         this.resetOverlays();
 
-        document.getElementById('char-display').innerText = this.currentConsonant.char;
+        const display = document.getElementById('char-display');
+        display.innerText = this.currentConsonant.char;
+        
+        // Font Mixing Logic
+        display.classList.remove('modern');
+        if (this.settings.mixFonts && Math.random() > 0.5) {
+            display.classList.add('modern');
+        }
+
         document.getElementById('name-display').innerText = this.currentConsonant.name;
         document.getElementById('meaning-display').innerText = this.currentConsonant.meaning;
         this.applyCardVisibility();
