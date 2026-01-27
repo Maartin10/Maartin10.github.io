@@ -601,7 +601,16 @@
         window.haptic = haptic;
         window.hapticConfirm = () => haptic.confirm();
         window.hapticError = () => haptic.error();
+        
+        // Native iOS haptic via switch toggle
+        window.triggerNativeHaptic = () => {
+            const h = document.getElementById('haptic-trigger');
+            if (h) h.checked = !h.checked;
+        };
     </script>
+    
+    <!-- Native Haptic Trigger for iOS -->
+    <input type="checkbox" id="haptic-trigger" style="position: absolute; opacity: 0; pointer-events: none;" switch title="Haptic Trigger" aria-hidden="true">
     
     <!-- Menu Screen -->
     <div id="menu-screen">
@@ -1268,6 +1277,13 @@ class App {
     submitAnswer(userGuess) {
         const correctAnswer = this.currentConsonant.class;
         const isCorrect = userGuess === correctAnswer;
+
+        // Use native haptic switch for drag-end submission (most reliable on iOS)
+        if (window.triggerNativeHaptic) {
+            window.triggerNativeHaptic();
+        } else if (window.haptic) {
+            window.haptic();
+        }
 
         if (isCorrect) {            
             // Directions for swiping away
